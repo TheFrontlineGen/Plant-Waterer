@@ -1,6 +1,9 @@
+import requests
+import os
 import subprocess
 import platform
-import requests
+
+print("\033[1;33mLoading Script Updater...\033[0m")
 
 # Check and Enable Wi-Fi
 def check_and_enable_wifi():
@@ -43,16 +46,41 @@ def is_cnx_active(timeout):
             continue
     return False
 
-if __name__ == "__main__":
-    # Welcome Message
-    print("\033[1;33m\nLoading Script...\033[0m")
+# Define the URL to the raw file on GitHub and the local file path
+github_url = "https://raw.githubusercontent.com/TheFrontlineGen/Plant-Waterer/main/main.py"
+local_file_path = "main.py"
 
-    # Check and Enable Wi-Fi
-    check_and_enable_wifi()
+# Check and enable Wi-Fi
+check_and_enable_wifi()
 
-    # Check Internet Connectivity
-    timeout_value = 10
-    if is_cnx_active(timeout_value):
-        print("\033[0;32mInternet accessible...\033[0m")
+# Check Internet connectivity
+if is_cnx_active(timeout=5):
+    print("\033[0;32mInternet accessible...\033[0m")
+    # Fetch the content of the remote file
+    response = requests.get(github_url)
+
+    # Check if the request was successful (status code 200)
+    if response.status_code == 200:
+        remote_content = response.text
+
+        # Read the content of the local file
+        with open(local_file_path, 'r') as local_file:
+            local_content = local_file.read()
+
+        # Compare the remote and local content
+        if remote_content != local_content:
+            # If they differ, save the remote content to the local file
+            with open(local_file_path, 'w') as local_file:
+                local_file.write(remote_content)
+            
+            print("Successfully updated main.py from GitHub.")
+        else:
+            print("\033[0;32mScript is up-to-date...\033[0m")
     else:
-        print("\033[0;31mInternet not accessible...\033[0m")
+        print("Failed to fetch the remote file from GitHub.")
+
+# Run the local main.py
+try:
+    subprocess.run(["python", local_file_path], check=True)
+except subprocess.CalledProcessError as e:
+    print(f"Error running main.py: {e}")
